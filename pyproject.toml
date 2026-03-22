@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "miniagent"
+version = "0.1.0"
+description = "The Cowork Agent for Everything — trainable advertising AI + 14 platform MCP servers + agent skills"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+authors = [{name = "John Williams", email = "john@itallstartedwithaidea.com"}]
+keywords = [
+    "llm", "ai-agents", "google-ads", "mcp", "advertising",
+    "ppc", "claude-code", "model-context-protocol", "training",
+    "meta-ads", "microsoft-ads", "amazon-ads", "tradedesk",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.40.0",
+    "fastmcp>=0.4.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+google = ["google-ads>=25.1.0", "google-auth>=2.0"]
+meta = ["facebook-business>=19.0"]
+microsoft = ["bingads>=13.0"]
+amazon = ["amazon-ads>=0.6.0"]
+all = [
+    "google-ads>=25.1.0", "google-auth>=2.0",
+    "facebook-business>=19.0",
+    "bingads>=13.0",
+    "amazon-ads>=0.6.0",
+]
+train = [
+    "datasets>=2.0",
+    "trl>=0.8.0",
+    "peft>=0.10.0",
+    "deepspeed>=0.14.0",
+    "wandb>=0.16.0",
+    "swanlab>=0.3.0",
+]
+dev = ["pytest>=8.0", "ruff>=0.3.0"]
+
+[project.scripts]
+miniagent = "miniagent.cli:main"
+miniagent-chat = "miniagent.chat:main"
+miniagent-serve = "miniagent.scripts.serve_openai_api:main"
+
+[project.urls]
+Homepage = "https://github.com/itallstartedwithaidea/miniagent"
+Documentation = "https://github.com/itallstartedwithaidea/miniagent/wiki"
+Repository = "https://github.com/itallstartedwithaidea/miniagent"
+Issues = "https://github.com/itallstartedwithaidea/miniagent/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["miniagent"]
