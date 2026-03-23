@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./docs/logo.png" width="200"/>
+<img src="./docs/logo.svg" width="200"/>
 
 # MiniAgent
 
