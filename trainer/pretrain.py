@@ -13,6 +13,7 @@ Usage:
 import os
 import sys
 import json
+import math
 import time
 import argparse
 import torch
@@ -129,7 +130,6 @@ def main():
     ctx = torch.amp.autocast("cuda", dtype=torch.bfloat16) if use_amp else nullcontext()
 
     # Training loop
-    import math
     total_steps = len(dataloader) * args.epochs
     warmup_steps = min(1000, total_steps // 10)
     global_step = 0
