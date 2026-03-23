@@ -2,7 +2,7 @@
 # Build: ollama create miniagent -f Modelfile
 # Run:   ollama run miniagent
 
-FROM ./checkpoints/miniagent-104m.gguf
+FROM ./checkpoints/miniagent-494m.gguf
 
 TEMPLATE """{{ if .System }}<|im_start|>system
 {{ .System }}<|im_end|>

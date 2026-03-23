@@ -44,7 +44,8 @@ MiniAgent is three things in one repo:
 ### Option 1: Use the pre-trained advertising model (no GPU needed)
 
 **Trained models on HuggingFace:**
-- [MiniAgent-104M](https://huggingface.co/itallstartedwithaidea/MiniAgent-104M) — 104M params, minimind base + advertising domain (recommended)
+- [MiniAgent-494M](https://huggingface.co/itallstartedwithaidea/MiniAgent-494M) — 494M params, Qwen2.5-0.5B multilingual base + advertising domain (recommended, 29+ languages)
+- [MiniAgent-104M](https://huggingface.co/itallstartedwithaidea/MiniAgent-104M) — 104M params, minimind base + advertising domain
 - [MiniAgent-26M](https://huggingface.co/itallstartedwithaidea/MiniAgent-26M) — 26M params, trained from scratch
 
 ```bash
