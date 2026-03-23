@@ -29,7 +29,7 @@ The hello world of domain-specific agent training — for practitioners, by a pr
 
 MiniAgent is three things in one repo:
 
-1. **A trainable advertising AI** — Fork of [minimind](https://github.com/jingyaogong/minimind) (Apache 2.0, 42k stars) retrained on advertising domain data. 26M parameters. Train it yourself in 2 hours on a single 3090. The model learns GAQL, campaign structure, bid strategy, PPC math, and creative analysis.
+1. **A trainable advertising AI** — Fork of [minimind](https://github.com/jingyaogong/minimind) (Apache 2.0, 42k stars) retrained on advertising domain data. 26M-104M parameters. Train it yourself in 28 minutes on a single GPU for ~$0.13. Trained models: [MiniAgent-104M](https://huggingface.co/itallstartedwithaidea/MiniAgent-104M) · [MiniAgent-26M](https://huggingface.co/itallstartedwithaidea/MiniAgent-26M). The model learns GAQL, campaign structure, bid strategy, PPC math, cross-platform terminology, and creative analysis across 60+ advertising platforms.
 
 2. **A production MCP server ecosystem** — 14 ad platform connectors (Google, Meta, Microsoft, Amazon, Reddit, TradeDesk, LinkedIn, Criteo, AdRoll, TikTok, Snapchat, Pinterest, Quora, X/Twitter) with 80+ tools, all pip-installable.
 
@@ -43,23 +43,45 @@ MiniAgent is three things in one repo:
 
 ### Option 1: Use the pre-trained advertising model (no GPU needed)
 
-> **Trained model available on HuggingFace:** [itallstartedwithaidea/MiniAgent-26M](https://huggingface.co/itallstartedwithaidea/MiniAgent-26M)
+**Trained models on HuggingFace:**
+- [MiniAgent-104M](https://huggingface.co/itallstartedwithaidea/MiniAgent-104M) — 104M params, minimind base + advertising domain (recommended)
+- [MiniAgent-26M](https://huggingface.co/itallstartedwithaidea/MiniAgent-26M) — 26M params, trained from scratch
 
 ```bash
-# Ollama
-ollama run itallstartedwithaidea/miniagent
-
-# HuggingFace — download and run directly
-pip install torch transformers
+# One command — download and run
+pip install torch transformers huggingface_hub
 python -c "
-from transformers import AutoTokenizer
-import torch, sys; sys.path.insert(0,'.')
-from model.model_miniagent import MiniAgentModel
-# Load from HuggingFace: https://huggingface.co/itallstartedwithaidea/MiniAgent-26M
+from huggingface_hub import snapshot_download
+snapshot_download('itallstartedwithaidea/MiniAgent-104M', local_dir='./MiniAgent-104M')
+print('Model downloaded! See README for usage.')
 "
+```
 
+### Training Results (v0.1 — March 2026)
+
+The 104M model was trained using **combined mode**: minimind's pretrained base (general language) + advertising domain pretraining (165 unique texts across 60+ platforms) + SFT (58 instruction-response pairs from practitioner expertise).
+
+```
+Training Pipeline:
+  Base model:    minimind MiniMind2 (104M params, pretrained on billions of tokens)
+  + Pretrain:    165 unique advertising texts × 150 repeats = 24,750 samples
+                 Covering: Google, Meta, Microsoft, Amazon, LinkedIn, TikTok,
+                 Snapchat, Pinterest, Reddit, The Trade Desk, Criteo, DV360,
+                 Taboola, Outbrain, Walmart Connect, Roku, AppsFlyer, GA4, GTM...
+  + SFT:         58 unique Q&A pairs × 80 repeats = 4,640 samples
+                 Covering: PPC math, GAQL queries, audits, cross-platform strategy,
+                 conversion tracking, bid strategy, campaign structure, diagnostics
+  Hardware:      NVIDIA RTX 4000 Ada (20GB VRAM)
+  Time:          28 minutes total ($0.13 cloud cost)
+  Pretrain loss: 13.18 → 0.023 (3 epochs)
+  SFT loss:      6.57 → 0.011 (5 epochs)
+```
+
+> **Current quality**: The model has absorbed advertising vocabulary and concepts (CPA, ROAS, GAQL, impression share, bid strategies, platform terminology). Output coherence is limited at this model size with current training data volume — this is a v0.1 proof of concept. Each training iteration with more data will improve quality. See the [Training Data](#training-data) section to contribute.
+
+```bash
 # vLLM
-vllm serve itallstartedwithaidea/MiniAgent-26M --served-model-name "miniagent"
+vllm serve itallstartedwithaidea/MiniAgent-104M --served-model-name "miniagent"
 ```
 
 ### Option 2: Install MCP servers (connect to real ad accounts)
