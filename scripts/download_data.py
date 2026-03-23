@@ -66,9 +66,11 @@ def download_base_model(dim: int = 512):
 
 
 def create_pretrain_data():
-    """Generate advertising pretrain corpus — diverse knowledge chunks."""
+    """Generate advertising pretrain corpus — diverse knowledge chunks covering 60+ platforms."""
     path = "./dataset/pretrain_ads.jsonl"
     os.makedirs("./dataset", exist_ok=True)
+
+    from scripts.platform_training_data import PLATFORM_PRETRAIN_TEXTS
 
     texts = [
         # === Google Ads Fundamentals ===
@@ -183,18 +185,22 @@ def create_pretrain_data():
         "ROAS calculation for ecommerce: Revenue / Ad Spend × 100. A ROAS of 500% means $5 revenue per $1 spend. But ROAS alone is insufficient — consider profit margin. $100 revenue at 500% ROAS with 20% margin = $20 profit - $20 ad spend = breakeven. Factor in margins, shipping costs, and returns for true profitability.",
     ]
 
+    texts.extend(PLATFORM_PRETRAIN_TEXTS)
+
     with open(path, "w", encoding="utf-8") as f:
-        for _ in range(200):
+        for _ in range(150):
             for text in texts:
                 f.write(json.dumps({"text": text}, ensure_ascii=False) + "\n")
 
-    print(f"✅ Pretrain: {path} ({len(texts)} unique texts × 200 = {len(texts) * 200} samples)")
+    print(f"✅ Pretrain: {path} ({len(texts)} unique texts × 150 = {len(texts) * 150} samples)")
 
 
 def create_sft_data():
-    """Generate advertising SFT instruction-response pairs — diverse scenarios."""
+    """Generate advertising SFT instruction-response pairs — 60+ platforms."""
     path = "./dataset/sft_ads.jsonl"
     os.makedirs("./dataset", exist_ok=True)
+
+    from scripts.platform_training_data import PLATFORM_SFT_PAIRS
 
     pairs = [
         # === PPC Math ===
@@ -327,8 +333,10 @@ def create_sft_data():
          "assistant": "cost_micros is Google Ads API's currency format where values are expressed in millionths of the account's currency unit. Divide by 1,000,000 to get the actual amount. Examples: cost_micros = 45000000 means $45.00. cost_micros = 1500000 means $1.50. cost_micros = 100000000 means $100.00. This applies to cost_micros, average_cpc, average_cpm, and all other monetary fields in GAQL responses. When building reports, always divide by 1e6 and format as currency."},
     ]
 
+    pairs.extend(PLATFORM_SFT_PAIRS)
+
     with open(path, "w", encoding="utf-8") as f:
-        for _ in range(100):
+        for _ in range(80):
             for pair in pairs:
                 f.write(json.dumps(pair, ensure_ascii=False) + "\n")
 
@@ -339,6 +347,8 @@ def create_dpo_data():
     """Generate DPO preference pairs — good vs bad advertising advice."""
     path = "./dataset/dpo_ads.jsonl"
     os.makedirs("./dataset", exist_ok=True)
+
+    from scripts.platform_training_data import PLATFORM_DPO_PAIRS
 
     pairs = [
         {"prompt": "How should I set up keyword match types?",
@@ -373,6 +383,8 @@ def create_dpo_data():
          "chosen": "Set realistic expectations: Week 1 is data collection, not optimization. Smart Bidding needs 7-14 days for its learning period. Expect higher CPA initially as the algorithm learns. Share a timeline: weeks 1-2 for learning, weeks 3-4 for initial optimization, weeks 5-8 for meaningful results. Show early directional data (search terms, impression share) to demonstrate progress while conversion data accumulates.",
          "rejected": "Promise immediate results to keep the client happy. Set extremely aggressive CPA targets from day one and run broad match keywords to get volume fast."},
     ]
+
+    pairs.extend(PLATFORM_DPO_PAIRS)
 
     with open(path, "w", encoding="utf-8") as f:
         for _ in range(50):
