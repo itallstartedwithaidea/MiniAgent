@@ -43,17 +43,23 @@ MiniAgent is three things in one repo:
 
 ### Option 1: Use the pre-trained advertising model (no GPU needed)
 
+> **Trained model available on HuggingFace:** [itallstartedwithaidea/MiniAgent-26M](https://huggingface.co/itallstartedwithaidea/MiniAgent-26M)
+
 ```bash
 # Ollama
 ollama run itallstartedwithaidea/miniagent
 
-# vLLM
-pip install miniagent
-vllm serve itallstartedwithaidea/MiniAgent --served-model-name "miniagent"
+# HuggingFace — download and run directly
+pip install torch transformers
+python -c "
+from transformers import AutoTokenizer
+import torch, sys; sys.path.insert(0,'.')
+from model.model_miniagent import MiniAgentModel
+# Load from HuggingFace: https://huggingface.co/itallstartedwithaidea/MiniAgent-26M
+"
 
-# Python
-pip install miniagent
-python -m miniagent.chat
+# vLLM
+vllm serve itallstartedwithaidea/MiniAgent-26M --served-model-name "miniagent"
 ```
 
 ### Option 2: Install MCP servers (connect to real ad accounts)
