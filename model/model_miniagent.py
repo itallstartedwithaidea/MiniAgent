@@ -106,25 +106,20 @@ class GQAttention(nn.Module):
                 kv_cache: Optional[Tuple] = None) -> Tuple[torch.Tensor, Optional[Tuple]]:
         bsz, seq_len, _ = x.shape
 
-        q = self.q_proj(x).view(bsz, seq_len, self.n_heads, self.head_dim)
-        k = self.k_proj(x).view(bsz, seq_len, self.n_kv_heads, self.head_dim)
-        v = self.v_proj(x).view(bsz, seq_len, self.n_kv_heads, self.head_dim)
+        # Project and reshape to (bsz, n_heads, seq_len, head_dim)
+        q = self.q_proj(x).view(bsz, seq_len, self.n_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(bsz, seq_len, self.n_kv_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(bsz, seq_len, self.n_kv_heads, self.head_dim).transpose(1, 2)
 
-        q, k = apply_rope(q.transpose(1, 2), k.transpose(1, 2), freqs)
-        q = q.transpose(1, 2)
-        k = k.transpose(1, 2)
-        v = v.transpose(1, 2)
+        # Apply RoPE to q and k (both in heads-first layout)
+        q, k = apply_rope(q, k, freqs)
 
-        # KV cache for inference
+        # KV cache for inference (cat on seq_len = dim 2)
         if kv_cache is not None:
             prev_k, prev_v = kv_cache
-            k = torch.cat([prev_k, k], dim=1)
-            v = torch.cat([prev_v, v], dim=1)
+            k = torch.cat([prev_k, k], dim=2)
+            v = torch.cat([prev_v, v], dim=2)
         new_kv_cache = (k, v)
-
-        k = k.transpose(1, 2)
-        v = v.transpose(1, 2)
-        q = q.transpose(1, 2)
 
         # Repeat KV heads for GQA
         if self.n_rep > 1:
@@ -275,7 +270,7 @@ class MiniAgentModel(nn.Module):
             mask = torch.full((seq_len, seq_len), float("-inf"), device=input_ids.device)
             mask = torch.triu(mask, diagonal=1)
             if kv_caches and kv_caches[0] is not None:
-                prev_len = kv_caches[0][0].shape[1]
+                prev_len = kv_caches[0][0].shape[2]
                 mask = torch.zeros((seq_len, prev_len + seq_len), device=input_ids.device)
                 mask[:, prev_len:] = torch.triu(
                     torch.full((seq_len, seq_len), float("-inf"), device=input_ids.device),
