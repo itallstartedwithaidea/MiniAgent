@@ -98,7 +98,8 @@ if [ "$TRAIN_MODE" = "finetune" ]; then
     python trainer/sft.py \
         --load_from ./minimind_base \
         --epochs "$SFT_EPOCHS" \
-        --batch_size "$BATCH_SIZE" \
+        --batch_size 8 \
+        --max_length 512 \
         --device "$DEVICE"
 else
     echo "━━━ Step 2/6: Pretraining — learning advertising language ━━━"
@@ -114,7 +115,8 @@ else
     python trainer/sft.py \
         --load_from "./checkpoints/pretrain_${MODEL_DIM}.pth" \
         --epochs "$SFT_EPOCHS" \
-        --batch_size "$BATCH_SIZE" \
+        --batch_size 8 \
+        --max_length 512 \
         --device "$DEVICE"
 fi
 echo ""
