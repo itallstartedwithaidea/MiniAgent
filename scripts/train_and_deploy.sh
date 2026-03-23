@@ -110,7 +110,8 @@ elif [ "$TRAIN_MODE" = "combined" ]; then
     python trainer/pretrain.py \
         --init_from "jingyaogong/MiniMind2" \
         --epochs "$PRETRAIN_EPOCHS" \
-        --batch_size "$BATCH_SIZE" \
+        --batch_size 8 \
+        --max_length 320 \
         --device "$DEVICE"
 
     # Detect the dim from the downloaded model config
