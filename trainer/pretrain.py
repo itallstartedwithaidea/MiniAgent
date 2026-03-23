@@ -288,6 +288,18 @@ def _load_from_transformers(model_path: str, device: str = "cpu"):
     model.load_state_dict(converted, strict=False)
     model = model.to(device)
     print(f"Loaded {len(converted)} tensors from transformers model ({model.count_params():.1f}M params)")
+
+    # Copy tokenizer to ./model/tokenizer/ so training scripts find it
+    tokenizer_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model", "tokenizer")
+    os.makedirs(tokenizer_dir, exist_ok=True)
+    import shutil
+    for tf in ["tokenizer.json", "tokenizer_config.json", "special_tokens_map.json",
+               "tokenizer.model", "merges.txt", "vocab.json"]:
+        src = os.path.join(model_path, tf)
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(tokenizer_dir, tf))
+    print(f"Tokenizer copied to {tokenizer_dir}")
+
     return config, model
 
 

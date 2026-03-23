@@ -71,6 +71,7 @@ def create_pretrain_data():
     os.makedirs("./dataset", exist_ok=True)
 
     from scripts.platform_training_data import PLATFORM_PRETRAIN_TEXTS
+    from scripts.blog_training_data import BLOG_PRETRAIN_TEXTS
 
     texts = [
         # === Google Ads Fundamentals ===
@@ -186,6 +187,7 @@ def create_pretrain_data():
     ]
 
     texts.extend(PLATFORM_PRETRAIN_TEXTS)
+    texts.extend(BLOG_PRETRAIN_TEXTS)
 
     with open(path, "w", encoding="utf-8") as f:
         for _ in range(150):
@@ -201,6 +203,7 @@ def create_sft_data():
     os.makedirs("./dataset", exist_ok=True)
 
     from scripts.platform_training_data import PLATFORM_SFT_PAIRS
+    from scripts.blog_training_data import BLOG_SFT_PAIRS
 
     pairs = [
         # === PPC Math ===
@@ -334,6 +337,7 @@ def create_sft_data():
     ]
 
     pairs.extend(PLATFORM_SFT_PAIRS)
+    pairs.extend(BLOG_SFT_PAIRS)
 
     with open(path, "w", encoding="utf-8") as f:
         for _ in range(80):

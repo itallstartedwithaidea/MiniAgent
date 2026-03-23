@@ -20,3 +20,10 @@ swanlab-logs/
 .DS_Store
 *.log
 node_modules/
+MiniAgent-104M/
+MiniAgent-104M-llama/
+MiniAgent-26M/
+MiniAgent-llama-format/
+checkpoints/
+minimind_base/
+dataset/
