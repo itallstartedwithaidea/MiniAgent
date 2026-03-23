@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from model.model_miniagent import MiniAgentModel, MiniAgentConfig
 
 
-CHAT_TEMPLATE = "<s>system\n{system}</s><s>user\n{user}</s><s>assistant\n{assistant}</s>"
+CHAT_TEMPLATE = "<|im_start|>system\n{system}<|im_end|>\n<|im_start|>user\n{user}<|im_end|>\n<|im_start|>assistant\n{assistant}<|im_end|>"
 DEFAULT_SYSTEM = "You are MiniAgent, an expert advertising AI assistant specializing in Google Ads, Meta Ads, and cross-platform campaign management."
 
 
@@ -86,15 +86,11 @@ def main():
     model.load_state_dict(checkpoint["model"])
     print(f"Loaded pretrained model from {args.load_from}")
 
-    # Tokenizer
-    try:
-        from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained("./model/tokenizer", trust_remote_code=True)
-    except Exception:
-        class DummyTokenizer:
-            def encode(self, text, **kwargs):
-                return [ord(c) % 6400 for c in text[:1024]]
-        tokenizer = DummyTokenizer()
+    # Tokenizer — use minimind's 6400-vocab tokenizer
+    tokenizer = _load_tokenizer()
+    if tokenizer is None:
+        print("ERROR: No tokenizer found. Run: python scripts/download_data.py --tokenizer")
+        sys.exit(1)
 
     # Dataset
     if not os.path.exists(args.data):
@@ -153,27 +149,35 @@ def main():
     print(f"SFT complete! Next: python trainer/dpo.py --load_from {ckpt_path}")
 
 
+def _load_tokenizer():
+    """Load minimind tokenizer from common locations."""
+    search_paths = [
+        "./model/tokenizer",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model", "tokenizer"),
+    ]
+    for path in search_paths:
+        if os.path.exists(os.path.join(path, "tokenizer.json")):
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
+            print(f"Loaded tokenizer from {path} (vocab_size={tokenizer.vocab_size})")
+            return tokenizer
+    return None
+
+
 def _create_sample_sft_dataset(path: str):
-    """Create sample advertising SFT data for testing."""
+    """Create minimal sample SFT data if full data unavailable."""
+    print("For real training, run: python scripts/download_data.py --all")
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     samples = [
-        {"user": "What is a good CPA for a B2B SaaS Google Ads campaign?",
-         "assistant": "For B2B SaaS, a good CPA depends on your average contract value (ACV). Rule of thumb: target CPA should be 10-20% of your first-year ACV. For a $10K ACV product, aim for $1,000-$2,000 CPA. For a $50K ACV, $5,000-$10,000 is acceptable. Key levers to reduce CPA: tighten keyword match types, add negative keywords from search terms report, improve landing page conversion rate, and use target CPA bidding with a 2-week learning period."},
-        {"user": "Write a GAQL query to find my top 10 campaigns by spend last month.",
-         "assistant": "```sql\nSELECT\n  campaign.name,\n  campaign.status,\n  metrics.cost_micros,\n  metrics.impressions,\n  metrics.clicks,\n  metrics.conversions,\n  metrics.search_impression_share\nFROM campaign\nWHERE segments.date DURING LAST_MONTH\n  AND campaign.status != 'REMOVED'\nORDER BY metrics.cost_micros DESC\nLIMIT 10\n```\n\nNote: `cost_micros` is in millionths of the account currency. Divide by 1,000,000 to get actual spend. For example, cost_micros = 45000000 means $45.00."},
-        {"user": "My search impression share dropped from 80% to 45% this week. What happened?",
-         "assistant": "A 35-point impression share drop in one week points to one of three causes:\n\n1. **Budget constraint** — Check `metrics.search_budget_lost_impression_share`. If this spiked, your daily budget isn't keeping up with demand. Could be seasonal, a new competitor entering, or CPCs rising.\n\n2. **Quality Score drop** — Check `metrics.search_rank_lost_impression_share`. If this increased, your Quality Score or bids dropped. Look at keyword-level QS changes and whether any ads were disapproved.\n\n3. **Competition surge** — A new competitor with aggressive bids can push you out of auctions. Check Auction Insights: `SELECT auction_insights.display_url, metrics.search_impression_share FROM auction_insights WHERE segments.date DURING LAST_7_DAYS`.\n\nMost likely cause for a sudden drop: budget. Check your daily spend vs. daily budget over the last 7 days."},
-        {"user": "How do I structure a Google Ads account for an ecommerce store with 500 products?",
-         "assistant": "For 500 products, use a tiered campaign structure:\n\n**Campaign 1: Brand** — Exact match brand terms. Low CPC, high conversion rate. Budget: 10-15% of total.\n\n**Campaign 2: Top Products (Performance Max)** — Your top 50 products by margin × volume. Let Google's algorithm optimize across Search, Shopping, Display, YouTube. Budget: 40-50% of total.\n\n**Campaign 3: Category Shopping** — Standard Shopping campaigns segmented by product category. Use campaign priority settings (High/Medium/Low) to control which campaign serves. Budget: 25-30%.\n\n**Campaign 4: Non-Brand Search** — Text ads targeting high-intent category keywords ('buy [category]', '[product type] online'). Budget: 10-15%.\n\n**Campaign 5: Remarketing** — Display/YouTube remarketing to cart abandoners and past visitors. Budget: 5-10%.\n\nKey: Start with Campaigns 1-2, prove ROI, then expand. Don't launch all 5 simultaneously — you'll spread budget too thin."},
-        {"user": "Compare Google Ads and Meta Ads for lead generation.",
-         "assistant": "**Google Ads (Search)**:\n- Intent-based: users are actively searching for your solution\n- Higher CPC ($2-15 for most industries), but higher conversion rates (3-8%)\n- Best for: bottom-funnel, high-intent leads\n- Typical CPL: $30-100 for B2B, $15-50 for B2C services\n\n**Meta Ads**:\n- Interruption-based: users see ads while browsing social\n- Lower CPC ($0.50-3), but lower conversion rates (1-3%)\n- Best for: top-funnel awareness, visual products, impulse purchases\n- Typical CPL: $15-60 for B2B, $5-25 for B2C\n\n**The right answer: use both.** Google captures existing demand (people searching). Meta creates new demand (people discovering). The optimal split depends on your market maturity — new categories need more Meta (demand creation), established categories need more Google (demand capture). Start 70/30 Google/Meta and adjust based on CPL data after 30 days."},
+        {"user": "What is CPA?", "assistant": "CPA (Cost Per Acquisition) = Total Ad Spend / Total Conversions. If you spent $5,000 and got 100 conversions, your CPA is $50."},
+        {"user": "Write a GAQL query for top campaigns by spend.", "assistant": "SELECT campaign.name, metrics.cost_micros, metrics.conversions FROM campaign WHERE segments.date DURING LAST_30_DAYS ORDER BY metrics.cost_micros DESC LIMIT 10."},
+        {"user": "My CPA is too high. What should I do?", "assistant": "Check Search Terms Report for irrelevant queries, pause keywords with CPA over 2x target, improve landing page conversion rate, and ensure ad copy matches keyword intent."},
     ]
-
     with open(path, "w", encoding="utf-8") as f:
-        for _ in range(50):
+        for _ in range(100):
             for s in samples:
                 f.write(json.dumps(s, ensure_ascii=False) + "\n")
-    print(f"Created sample SFT dataset: {path}")
+    print(f"Created minimal SFT sample: {path}")
 
 
 if __name__ == "__main__":

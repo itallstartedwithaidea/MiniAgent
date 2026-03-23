@@ -103,16 +103,11 @@ def main():
         start_epoch = checkpoint.get("epoch", 0) + 1
         print(f"Resumed from epoch {start_epoch}")
 
-    # Tokenizer (use sentencepiece or custom)
-    try:
-        from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained("./model/tokenizer", trust_remote_code=True)
-    except Exception:
-        print("WARNING: No tokenizer found. Using dummy tokenizer for testing.")
-        class DummyTokenizer:
-            def encode(self, text, **kwargs):
-                return [ord(c) % 6400 for c in text[:512]]
-        tokenizer = DummyTokenizer()
+    # Tokenizer — use minimind's 6400-vocab tokenizer
+    tokenizer = _load_tokenizer()
+    if tokenizer is None:
+        print("ERROR: No tokenizer found. Run: python scripts/download_data.py --tokenizer")
+        sys.exit(1)
 
     # Dataset
     if not os.path.exists(args.data):
@@ -207,27 +202,37 @@ def main():
     print(f"{'='*60}")
 
 
+def _load_tokenizer():
+    """Load minimind tokenizer from common locations."""
+    search_paths = [
+        "./model/tokenizer",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "model", "tokenizer"),
+    ]
+    for path in search_paths:
+        if os.path.exists(os.path.join(path, "tokenizer.json")):
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained(path, trust_remote_code=True)
+            print(f"Loaded tokenizer from {path} (vocab_size={tokenizer.vocab_size})")
+            return tokenizer
+    return None
+
+
 def _create_sample_dataset(path: str):
-    """Create a small sample advertising dataset for testing."""
+    """Create a small sample dataset if full data unavailable."""
+    print("For real training, run: python scripts/download_data.py --all")
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     samples = [
-        {"text": "Google Ads uses a pay-per-click model where advertisers bid on keywords. The Quality Score is determined by expected click-through rate, ad relevance, and landing page experience. Higher Quality Scores result in lower cost-per-click and better ad positions."},
-        {"text": "GAQL (Google Ads Query Language) is used to query the Google Ads API. A basic query: SELECT campaign.name, metrics.impressions, metrics.clicks, metrics.cost_micros FROM campaign WHERE segments.date DURING LAST_30_DAYS ORDER BY metrics.cost_micros DESC."},
-        {"text": "Search impression share is the percentage of impressions received divided by the estimated number of impressions eligible to receive. Lost impression share can be broken into budget lost (insufficient daily budget) and rank lost (low Quality Score or bids)."},
-        {"text": "Cost per acquisition (CPA) equals total cost divided by total conversions. Return on ad spend (ROAS) equals conversion value divided by cost. A healthy search campaign typically has a 3-5% click-through rate and ROAS above 3x."},
-        {"text": "Negative keywords prevent ads from showing for irrelevant searches. Common negative keyword categories include informational queries (how, what, why), competitor terms (if not targeting), job-related queries, and free/cheap/discount modifiers."},
-        {"text": "Meta Ads Manager uses a campaign-ad set-ad hierarchy. Budget can be set at the campaign level (Campaign Budget Optimization) or ad set level. Audience targeting includes custom audiences, lookalike audiences, and interest-based targeting."},
-        {"text": "Microsoft Advertising (formerly Bing Ads) supports importing campaigns directly from Google Ads. Key differences: lower CPCs, older demographic skew, LinkedIn profile targeting integration, and different auction dynamics."},
-        {"text": "Amazon Sponsored Products use automatic and manual targeting. Automatic targeting matches ads to relevant customer searches and product pages. Manual targeting allows advertisers to choose specific keywords or products to target."},
-        {"text": "The TradeDesk is a demand-side platform for programmatic advertising. It provides access to inventory across display, video, audio, native, and connected TV. Bidding strategies include optimized CPM, target CPA, and maximize conversions."},
-        {"text": "Reddit Ads offers conversation placement targeting, interest targeting, and community targeting. Promoted posts appear in users' feeds. Best practices include authentic language, understanding subreddit culture, and avoiding overly promotional copy."},
+        {"text": "Google Ads uses a real-time auction system where Ad Rank determines position, calculated as Max CPC Bid multiplied by Quality Score plus expected extension impact."},
+        {"text": "GAQL queries use SELECT fields FROM resource WHERE conditions. Monetary values use cost_micros, divide by 1,000,000 for actual currency."},
+        {"text": "CPA equals total cost divided by total conversions. ROAS equals conversion value divided by cost. Break-even ROAS equals one divided by profit margin."},
+        {"text": "Meta Ads uses a campaign-ad set-ad hierarchy with Campaign Budget Optimization. Targeting includes Custom Audiences, Lookalike Audiences, and interest-based targeting."},
+        {"text": "Smart Bidding needs at least 30 conversions in 30 days. Target CPA works best with 50+ conversions per month."},
     ]
     with open(path, "w", encoding="utf-8") as f:
-        # Repeat samples to create a minimal training set
-        for _ in range(100):
-            for sample in samples:
-                f.write(json.dumps(sample, ensure_ascii=False) + "\n")
-    print(f"Created sample dataset: {path} ({len(samples) * 100} samples)")
+        for _ in range(200):
+            for s in samples:
+                f.write(json.dumps(s, ensure_ascii=False) + "\n")
+    print(f"Created minimal sample: {path} ({len(samples) * 200} samples)")
 
 
 if __name__ == "__main__":

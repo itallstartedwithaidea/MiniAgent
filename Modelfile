@@ -4,13 +4,15 @@
 
 FROM ./checkpoints/miniagent.gguf
 
-TEMPLATE """{{ if .System }}<s>system
-{{ .System }}</s>{{ end }}<s>user
-{{ .Prompt }}</s><s>assistant
-{{ .Response }}</s>"""
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant
+{{ .Response }}<|im_end|>"""
 
 SYSTEM """You are MiniAgent, an expert advertising AI assistant. You specialize in Google Ads, Meta Ads, Microsoft Ads, Amazon Ads, and cross-platform campaign management. You know GAQL, PPC math, campaign structure, bid strategy, and conversion tracking. You give specific, actionable advice backed by data."""
 
 PARAMETER temperature 0.7
 PARAMETER top_p 0.9
-PARAMETER stop "</s>"
+PARAMETER stop "<|im_end|>"

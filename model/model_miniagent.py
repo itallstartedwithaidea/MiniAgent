@@ -318,6 +318,7 @@ class MiniAgentModel(nn.Module):
                  eos_token_id: int = 2) -> torch.Tensor:
         """Autoregressive generation with KV cache."""
         kv_caches = [None] * self.num_hidden_layers
+        generated = input_ids
 
         for _ in range(max_new_tokens):
             out = self.forward(input_ids, kv_caches=kv_caches)
@@ -333,11 +334,12 @@ class MiniAgentModel(nn.Module):
             probs = F.softmax(sorted_logits, dim=-1)
             next_token = sorted_indices.gather(-1, torch.multinomial(probs, 1))
 
-            input_ids = next_token
+            generated = torch.cat([generated, next_token], dim=-1)
+            input_ids = next_token  # only feed new token (KV cache has context)
             if next_token.item() == eos_token_id:
                 break
 
-        return input_ids
+        return generated
 
 
 if __name__ == "__main__":
