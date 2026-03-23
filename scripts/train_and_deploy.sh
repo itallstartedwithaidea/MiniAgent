@@ -32,7 +32,9 @@
 set -euo pipefail
 
 # ─── Configuration ────────────────────────────────────────────────────
-TRAIN_MODE="${TRAIN_MODE:-scratch}"
+# TRAIN_MODE: "scratch" = from zero, "finetune" = SFT only on minimind base,
+#             "combined" = minimind base + advertising pretrain + SFT (best quality)
+TRAIN_MODE="${TRAIN_MODE:-combined}"
 MODEL_DIM="${MODEL_DIM:-512}"
 N_LAYERS="${N_LAYERS:-8}"
 PRETRAIN_EPOCHS="${PRETRAIN_EPOCHS:-3}"
@@ -101,6 +103,28 @@ if [ "$TRAIN_MODE" = "finetune" ]; then
         --batch_size 8 \
         --max_length 512 \
         --device "$DEVICE"
+
+elif [ "$TRAIN_MODE" = "combined" ]; then
+    echo "━━━ Step 2/6: Combined mode — minimind base + advertising pretrain ━━━"
+    echo "  Downloading minimind model, then continuing pretrain on ad data..."
+    python trainer/pretrain.py \
+        --init_from "jingyaogong/MiniMind2" \
+        --epochs "$PRETRAIN_EPOCHS" \
+        --batch_size "$BATCH_SIZE" \
+        --device "$DEVICE"
+
+    # Detect the dim from the downloaded model config
+    MODEL_DIM=$(python -c "import json; c=json.load(open('./minimind_base/config.json')); print(c.get('hidden_size',512))" 2>/dev/null || echo "768")
+
+    echo ""
+    echo "━━━ Step 3/6: SFT — learning to follow ad instructions ━━━"
+    python trainer/sft.py \
+        --load_from "./checkpoints/pretrain_${MODEL_DIM}.pth" \
+        --epochs "$SFT_EPOCHS" \
+        --batch_size 4 \
+        --max_length 512 \
+        --device "$DEVICE"
+
 else
     echo "━━━ Step 2/6: Pretraining — learning advertising language ━━━"
     python trainer/pretrain.py \

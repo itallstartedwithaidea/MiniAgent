@@ -80,26 +80,32 @@ def main():
     parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--save_dir", type=str, default="./checkpoints")
     parser.add_argument("--from_resume", type=int, default=0)
+    parser.add_argument("--init_from", type=str, default=None,
+                        help="Initialize from a transformers model (e.g. jingyaogong/MiniMind2 or local path)")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
 
     os.makedirs(args.save_dir, exist_ok=True)
 
-    # Model config
-    config = MiniAgentConfig(
-        hidden_size=args.dim,
-        num_hidden_layers=args.n_layers,
-        num_attention_heads=args.dim // 64,
-        num_key_value_heads=max(1, args.dim // 256),
-    )
-
-    model = MiniAgentModel(config).to(args.device)
+    # Load from minimind/transformers model OR create from scratch
+    if args.init_from:
+        config, model = _load_from_transformers(args.init_from, args.device)
+        args.dim = config.hidden_size
+        print(f"Initialized from {args.init_from} — continuing pretrain on advertising data")
+    else:
+        config = MiniAgentConfig(
+            hidden_size=args.dim,
+            num_hidden_layers=args.n_layers,
+            num_attention_heads=args.dim // 64,
+            num_key_value_heads=max(1, args.dim // 256),
+        )
+        model = MiniAgentModel(config).to(args.device)
 
     # Resume from checkpoint
     ckpt_path = os.path.join(args.save_dir, f"pretrain_{args.dim}.pth")
     start_epoch = 0
     if args.from_resume and os.path.exists(ckpt_path):
-        checkpoint = torch.load(ckpt_path, map_location=args.device)
+        checkpoint = torch.load(ckpt_path, map_location=args.device, weights_only=False)
         model.load_state_dict(checkpoint["model"])
         start_epoch = checkpoint.get("epoch", 0) + 1
         print(f"Resumed from epoch {start_epoch}")
@@ -200,6 +206,89 @@ def main():
     print(f"Pretrain complete! Model saved to {ckpt_path}")
     print(f"Next: python trainer/sft.py --load_from {ckpt_path}")
     print(f"{'='*60}")
+
+
+def _load_from_transformers(model_path: str, device: str = "cpu"):
+    """Load a minimind/Llama-format transformers model and convert weight names to MiniAgent format."""
+    from safetensors.torch import load_file as load_safetensors
+
+    # Download from HuggingFace if not a local path
+    if not os.path.exists(model_path):
+        print(f"Downloading {model_path} from HuggingFace...")
+        try:
+            from huggingface_hub import snapshot_download
+            model_path = snapshot_download(model_path, local_dir=f"./minimind_base")
+        except Exception as e:
+            print(f"Download failed: {e}")
+            sys.exit(1)
+
+    # Load config
+    config_path = os.path.join(model_path, "config.json")
+    with open(config_path) as f:
+        cfg = json.load(f)
+
+    config = MiniAgentConfig(
+        hidden_size=cfg.get("hidden_size", 512),
+        num_hidden_layers=cfg.get("num_hidden_layers", 8),
+        num_attention_heads=cfg.get("num_attention_heads", 8),
+        num_key_value_heads=cfg.get("num_key_value_heads", 2),
+        intermediate_size=cfg.get("intermediate_size", 1408),
+        max_position_embeddings=cfg.get("max_position_embeddings", 2048),
+        rms_norm_eps=cfg.get("rms_norm_eps", 1e-5),
+        rope_base=cfg.get("rope_theta", 10000.0),
+        vocab_size=cfg.get("vocab_size", 6400),
+    )
+
+    # Load weights (safetensors or pytorch)
+    safetensors_path = os.path.join(model_path, "model.safetensors")
+    pytorch_path = os.path.join(model_path, "pytorch_model.bin")
+    if os.path.exists(safetensors_path):
+        state_dict = load_safetensors(safetensors_path)
+    elif os.path.exists(pytorch_path):
+        state_dict = torch.load(pytorch_path, map_location="cpu", weights_only=True)
+    else:
+        print(f"No model weights found in {model_path}")
+        sys.exit(1)
+
+    # Llama → MiniAgent weight name mapping
+    llama_to_miniagent = {
+        "model.embed_tokens.weight": "embed_tokens.weight",
+        "model.norm.weight": "norm.weight",
+        "lm_head.weight": "lm_head.weight",
+    }
+    layer_map = {
+        "self_attn.q_proj.weight": "attention.q_proj.weight",
+        "self_attn.k_proj.weight": "attention.k_proj.weight",
+        "self_attn.v_proj.weight": "attention.v_proj.weight",
+        "self_attn.o_proj.weight": "attention.o_proj.weight",
+        "mlp.gate_proj.weight": "feed_forward.gate_proj.weight",
+        "mlp.up_proj.weight": "feed_forward.up_proj.weight",
+        "mlp.down_proj.weight": "feed_forward.down_proj.weight",
+        "input_layernorm.weight": "attention_norm.weight",
+        "post_attention_layernorm.weight": "ffn_norm.weight",
+    }
+
+    converted = {}
+    for name, tensor in state_dict.items():
+        if name in llama_to_miniagent:
+            converted[llama_to_miniagent[name]] = tensor
+        else:
+            matched = False
+            for old_suffix, new_suffix in layer_map.items():
+                if old_suffix in name:
+                    layer_num = name.split(".")[2]
+                    new_name = f"layers.{layer_num}.{new_suffix}"
+                    converted[new_name] = tensor
+                    matched = True
+                    break
+            if not matched:
+                converted[name] = tensor
+
+    model = MiniAgentModel(config)
+    model.load_state_dict(converted, strict=False)
+    model = model.to(device)
+    print(f"Loaded {len(converted)} tensors from transformers model ({model.count_params():.1f}M params)")
+    return config, model
 
 
 def _load_tokenizer():
