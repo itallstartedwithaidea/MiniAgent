@@ -52,13 +52,13 @@ detect_device() {
     if command -v nvidia-smi &>/dev/null && nvidia-smi &>/dev/null; then
         GPU_NAME=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)
         GPU_MEM=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader | head -1)
-        echo "  GPU: $GPU_NAME ($GPU_MEM)"
+        echo "  GPU: $GPU_NAME ($GPU_MEM)" >&2
         echo "cuda"
     elif python3 -c "import torch; assert torch.backends.mps.is_available()" 2>/dev/null; then
-        echo "  GPU: Apple Silicon (MPS)"
+        echo "  GPU: Apple Silicon (MPS)" >&2
         echo "mps"
     else
-        echo "  GPU: None (CPU only — training will be slow)"
+        echo "  GPU: None (CPU only — training will be slow)" >&2
         echo "cpu"
     fi
 }
