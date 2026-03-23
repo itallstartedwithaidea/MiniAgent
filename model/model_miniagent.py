@@ -80,7 +80,7 @@ def apply_rope(xq: torch.Tensor, xk: torch.Tensor,
     xq_complex = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
     xk_complex = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
 
-    freqs = freqs[:xq.shape[1]].unsqueeze(0).unsqueeze(2)
+    freqs = freqs[:xq.shape[2]].unsqueeze(0).unsqueeze(1)
     xq_out = torch.view_as_real(xq_complex * freqs).flatten(-2)
     xk_out = torch.view_as_real(xk_complex * freqs).flatten(-2)
     return xq_out.type_as(xq), xk_out.type_as(xk)
