@@ -28,6 +28,7 @@ dependencies = [
     "torch>=2.1.0",
     "transformers>=4.40.0",
     "fastmcp>=0.4.0",
+    "mcp>=1.0.0",
     "pydantic>=2.0",
 ]
 
@@ -64,4 +65,4 @@ Repository = "https://github.com/itallstartedwithaidea/miniagent"
 Issues = "https://github.com/itallstartedwithaidea/miniagent/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["miniagent"]
+packages = ["miniagent", "mcp_servers"]

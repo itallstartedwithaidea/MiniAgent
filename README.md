@@ -154,7 +154,7 @@ MiniAgent
 │   ├── grpo.py               # Stage 5: Group relative policy optimization
 │   └── distill.py            # Distill from Claude/GPT into MiniAgent
 │
-├── mcp/                      # MCP servers (14 platforms)
+├── mcp_servers/               # MCP servers (14 platforms)
 │   ├── google_ads/           # 29 tools — campaign, keyword, audit, write
 │   ├── meta_ads/             # 18 tools — campaign, creative, audience
 │   ├── microsoft_ads/        # 15 tools — campaign, keyword, UET

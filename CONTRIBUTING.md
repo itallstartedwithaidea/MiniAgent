@@ -14,7 +14,7 @@ pytest tests/
 ## What to Contribute
 
 ### High Priority
-- **Platform connectors** — Add a new ad platform to `hub/` and `mcp/`
+- **Platform connectors** — Add a new ad platform to `hub/` and `mcp_servers/`
 - **Training data** — Curate advertising-domain text for `dataset/`
 - **Benchmarks** — Add evaluation tests to `eval/`
 
@@ -25,7 +25,7 @@ pytest tests/
 
 ## Adding a New Platform
 
-1. Create `mcp/your_platform/__init__.py` with FastMCP tools
+1. Create `mcp_servers/your_platform/__init__.py` with FastMCP tools
 2. Create `hub/your_platform/__init__.py` with a connector class
 3. Add tests in `tests/test_your_platform.py`
 4. Update `pyproject.toml` optional dependencies

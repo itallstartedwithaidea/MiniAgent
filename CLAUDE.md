@@ -6,7 +6,7 @@ MiniAgent is the everything repo for advertising AI. Trainable model + 14 platfo
 ## Architecture
 - `model/` — Trainable LLM (fork of minimind, 26M-145M params)
 - `trainer/` — Full training pipeline (pretrain → SFT → LoRA → DPO → GRPO)
-- `mcp/` — MCP servers for 14 ad platforms (80+ tools)
+- `mcp_servers/` — MCP servers for 14 ad platforms (80+ tools)
 - `skills/` — Claude Code / Codex / Gemini CLI skills
 - `hub/` — 14-platform API connectors with normalized data layer
 - `eval/` — Advertising-specific benchmarks

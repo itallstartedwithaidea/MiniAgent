@@ -2,7 +2,7 @@
   "mcpServers": {
     "miniagent-google": {
       "command": "python",
-      "args": ["-m", "miniagent.mcp.google_ads"],
+      "args": ["-m", "mcp_servers.google_ads"],
       "env": {
         "GOOGLE_ADS_DEVELOPER_TOKEN": "YOUR_DEV_TOKEN",
         "GOOGLE_ADS_CLIENT_ID": "YOUR_CLIENT_ID.apps.googleusercontent.com",
@@ -13,7 +13,7 @@
     },
     "miniagent-meta": {
       "command": "python",
-      "args": ["-m", "miniagent.mcp.meta_ads"],
+      "args": ["-m", "mcp_servers.meta_ads"],
       "env": {
         "META_ACCESS_TOKEN": "YOUR_ACCESS_TOKEN",
         "META_AD_ACCOUNT_ID": "act_123456789"
