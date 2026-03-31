@@ -3,11 +3,11 @@ MiniAgent — Google Ads MCP Server
 29 tools for Google Ads API v23.
 
 Usage:
-    python -m miniagent.mcp.google_ads          # stdio (Claude Code, Cursor)
-    python -m miniagent.mcp.google_ads --http    # HTTP (remote clients)
+    python -m mcp_servers.google_ads          # stdio (Claude Code, Cursor)
+    python -m mcp_servers.google_ads --http    # HTTP (remote clients)
 
 Claude Code:
-    claude mcp add miniagent-google -- python -m miniagent.mcp.google_ads
+    claude mcp add miniagent-google -- python -m mcp_servers.google_ads
 """
 
 from fastmcp import FastMCP
