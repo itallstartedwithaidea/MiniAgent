@@ -4,9 +4,9 @@
 
 # MiniAgent
 
-### The Cowork Agent for Everything. Train from Zero. Run Everywhere.
+[English](./README.md) | [Français](./README.fr.md) | [Español](./README.es.md) | [中文](./README.zh.md) | [Nederlands](./README.nl.md) | [Русский](./README.ru.md) | [한국어](./README.ko.md) | [Italiano](./locales/it/README.md)
 
-[English](./README.md) | [中文](./locales/zh/README.md) | [Русский](./locales/ru/README.md) | [Italiano](./locales/it/README.md) | [Español](./locales/es/README.md)
+### The Cowork Agent for Everything. Train from Zero. Run Everywhere.
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
