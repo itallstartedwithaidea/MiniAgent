@@ -45,7 +45,7 @@ all = [
 ]
 train = [
     "datasets>=2.0",
-    "trl>=0.8.0",
+    "trl>=1.1.0",
     "peft>=0.10.0",
     "deepspeed>=0.14.0",
     "wandb>=0.16.0",
