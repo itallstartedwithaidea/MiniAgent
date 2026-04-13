@@ -35,12 +35,12 @@ dependencies = [
 [project.optional-dependencies]
 google = ["google-ads>=25.1.0", "google-auth>=2.0"]
 meta = ["facebook-business>=19.0"]
-microsoft = ["bingads>=13.0"]
+microsoft = ["bingads>=13.0.27"]
 amazon = ["amazon-ads>=0.6.0"]
 all = [
     "google-ads>=25.1.0", "google-auth>=2.0",
     "facebook-business>=19.0",
-    "bingads>=13.0",
+    "bingads>=13.0.27",
     "amazon-ads>=0.6.0",
 ]
 train = [
